@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="icon" href="ag2.jpg">
+<head>
+    <title>Agri Center Locator</title>
+    <link rel="icon" href="ag2.jpg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            flex-direction: column;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            width: 350px;
+        }
+        .input-field, label, input, select {
+            display: block;
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+        }
+        .btn {
+            background-color: rgb(51, 51, 184);
+            color: white;
+            padding: 10px;
+            border: none;
+            width: 100%;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .container.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="loginContainer">
+        <h2>Login</h2>
+        <input type="text" id="username" class="input-field" placeholder="Username" required>
+        <input type="password" id="password" class="input-field" placeholder="Password" required>
+        <button class="btn" onclick="login()">Login</button>
+        <p id="error-message" style="color: red;"></p>
+    </div>
+
+    <div class="container hidden" id="checkerContainer">
+        <h2>Selection</h2>
+        <button class="btn" onclick="showPage('landSuitabilityContainer')">Go to Land Suitability Checker</button>
+        <button class="btn" onclick="showPage('AgreeshopContainer')">Find Nearby Agri Shop</button>
+    </div>
+
+    <div class="container hidden" id="landSuitabilityContainer">
+        <h2>Land Suitability Checker</h2>
+        <label for="seedType">Seed Type:</label>
+        <input type="text" id="seedType" placeholder="Enter seed name" oninput="suggestValues()">
+        <p id="suggestions"></p>
+
+        <label for="soilType">Soil Type:</label>
+        <select id="soilType">
+            <option value="loamy">Loamy</option>
+            <option value="clay">Clay</option>
+            <option value="sandy">Sandy</option>
+        </select>
+
+        <label for="pHLevel">pH Level:</label>
+        <input type="number" id="pHLevel" step="0.1">
+
+        <label for="moisture">Moisture (%):</label>
+        <input type="number" id="moisture">
+        
+        <label for="waterLevel">Water Level (%):</label>
+        <input type="number" id="waterLevel">
+        
+        <label for="climate">Climate:</label>
+        <select id="climate">
+            <option value="temperate">Temperate</option>
+            <option value="tropical">Tropical</option>
+            <option value="arid">Arid</option>
+        </select>
+
+        <button class="btn" onclick="checkSuitability()">Check Suitability</button>
+        <p id="result"></p>
+        <p id="growthTime"></p>
+        <p id="tips"></p>
+        <button class="btn" onclick="showPage('checkerContainer')">Back</button>
+    </div>
+
+    <div class="container hidden" id="AgreeshopContainer">
+        <h2>Find Nearby Agri Shop</h2>
+        <label for="district">District:</label>
+        <select id="district" onchange="populateCities()">
+            <option value="">Select District</option>
+            <option value="Chennai">Chennai</option>
+            <option value="Coimbatore">Coimbatore</option>
+            <option value="Madurai">Madurai</option>
+            <option value="Tiruchirappalli">Tiruchirappalli</option>
+            <option value="Salem">Salem</option>
+            <option value="Erode">Erode</option>
+            <option value="Tirunelveli">Tirunelveli</option>
+            <option value="Vellore">Vellore</option>
+            <option value="Thoothukudi">Thoothukudi</option>
+            <option value="Namakkal">Namakkal</option>
+        </select>
+
+        <label for="city">City:</label>
+        <select id="city"></select>
+
+        <button class="btn" onclick="findAgreeshop()">Find Agri Shop</button>
+        <p id="shopResults"></p>
+        <button class="btn" onclick="showPage('checkerContainer')">Back</button>
+    </div>
+
+    <script>
+        function login() {
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+
+            if (username === "admin" && password === "password123") {
+                alert("Login Successful!");
+                document.getElementById("loginContainer").classList.add("hidden");
+                document.getElementById("checkerContainer").classList.remove("hidden");
+            } else {
+                document.getElementById("error-message").innerText = "Invalid username or password";
+            }
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll(".container").forEach(container => {
+                container.classList.add("hidden");
+            });
+            document.getElementById(pageId).classList.remove("hidden");
+        }
+
+        function checkSuitability() {
+            let seedType = document.getElementById("seedType").value.toLowerCase();
+            let soilType = document.getElementById("soilType").value;
+            let pHLevel = parseFloat(document.getElementById("pHLevel").value);
+            let moisture = parseInt(document.getElementById("moisture").value);
+            let waterLevel = parseInt(document.getElementById("waterLevel").value);
+            let climate = document.getElementById("climate").value;
+
+            let suitability = "Unknown";
+            let growthTime = "Unknown";
+            let tips = "";
+
+            const seedData = {
+                "wheat": { soil: "loamy", ph: { min: 6, max: 8 }, moisture: { min: 40, max: 60 }, water: {min: 30, max: 50}, climate: "temperate", time: "120 days", tips: "Ensure well-drained soil and adequate sunlight." },
+                "rice": { soil: "clay", ph: { min: 5.5, max: 7.5 }, moisture: { min: 70, max: 90 }, water: {min: 60, max: 80}, climate: "tropical", time: "150 days", tips: "Maintain flooded conditions and provide ample water." },
+                "maize": { soil: "loamy", ph: { min: 5.5, max: 7 }, moisture: { min: 50, max: 70 }, water: {min: 40, max: 60}, climate: "tropical", time: "90 days", tips: "Plant in warm soil and provide nitrogen-rich fertilizer." },
+                "barley": { soil: "sandy", ph: {min: 6, max: 7.5}, moisture: {min: 30, max: 50}, water: {min: 20, max: 40}, climate: "temperate", time: "110 days", tips: "Use well-draining soil, and avoid waterlogging." }
+            };
+
+            if (seedData[seedType]) {
+                let seed = seedData[seedType];
+
+                if (seed.soil === soilType &&
+                    pHLevel >= seed.ph.min && pHLevel <= seed.ph.max &&
+                    moisture >= seed.moisture.min && moisture <= seed.moisture.max &&
+                    waterLevel >= seed.water.min && waterLevel <= seed.water.max &&
+                    seed.climate === climate) {
+                    suitability = "Suitable";
+                    growthTime = seed.time;
+                    tips = seed.tips;
+                } else {
+                    suitability = "Not Suitable";
+                    growthTime = "N/A";
+                    tips = "Adjust soil, pH, moisture, water level, or climate to match the seed's requirements.";
+                    if(seed.soil != soilType) { tips += "<br> Soil type should be " + seed.soil + "."; }
+                    if(pHLevel < seed.ph.min || pHLevel > seed.ph.max){ tips += "<br> pH level should be between "+ seed.ph.min + " and " + seed.ph.max +".";}
+                    if(moisture < seed.moisture.min || moisture > seed.moisture.max){ tips += "<br> Moisture should be between " + seed.moisture.min + " and " + seed.moisture.max + "%.";}
+                    if(waterLevel < seed.water.min || waterLevel > seed.water.max){ tips += "<br> Water level should be between " + seed.water.min + " and " + seed.water.max + "%.";}
+                    if(seed.climate != climate){ tips += "<br> Climate should be " + seed.climate + ".";}
+                }
+            } else {
+                suitability = "Seed data not found.";
+                growthTime = "N/A";
+                tips = "Enter a valid seed type.";
+            }
+
+            document.getElementById("result").innerText = "Suitability: " + suitability;
+            document.getElementById("growthTime").innerText = "Estimated Growth Time: " + growthTime;
+            document.getElementById("tips").innerHTML = tips;
+        }
+
+        function populateCities() {
+            const citySelect = document.getElementById("city");
+            const district = document.getElementById("district").value;
+            citySelect.innerHTML = "";
+
+            const cities = {
+                "Chennai": ["Chennai"],
+                "Coimbatore": ["Coimbatore", "Pollachi", "Mettupalayam"],
+                "Madurai": ["Madurai", "Thirumangalam", "Usilampatti"],
+                "Tiruchirappalli": ["Tiruchirappalli", "Srirangam", "Manapparai"],
+                "Salem": ["Salem", "Attur", "Mettur", "Omalur"],
+                "Erode": ["Erode", "Gobichettipalayam", "Bhavani"],
+                "Tirunelveli": ["Tirunelveli", "Palayamkottai", "Tenkasi"],
+                "Vellore": ["Vellore", "Gudiyatham", "Ambur"],
+                "Thoothukudi": ["Thoothukudi", "Kovilpatti", "Srivaikuntam"],
+                "Namakkal": ["Namakkal", "Tiruchengode", "Rasipuram", "Kumarapalayam", "Mohanur","Velur"],
+            };
+
+            if (cities[district]) {
+                cities[district].forEach(city => {
+                    citySelect.innerHTML += `<option value="${city}">${city}</option>`;
+                });
+            } else {
+                citySelect.innerHTML = `<option value="">Select City</option>`;
+            }
+        }
+
+        function findAgreeshop() {
+            const city = document.getElementById("city").value;
+            const shopResults = document.getElementById("shopResults");
+            let results = "";
+
+            const shop = {
+                "Chennai": ["Med Shop A", "Health Plus Pharmacy", "City Care Pharmacy"],
+                "Coimbatore": ["Coimbatore Medi Center", "Health Hub", "Pollachi Medicals"],
+                "Pollachi": ["Pollachi Medical Store", "Quick Relief Pharmacy"],
+                "Mettupalayam": ["Mettupalayam Medicine House", "Trust Chemist"],
+                "Madurai": ["Madurai Pandi Medicals", "Health Solutions"],
+                "Thirumangalam": ["Thirumangalam Dispensary", "Family Pharmacy"],
+                "Usilampatti": ["Usilampatti Drugs", "City Clinic Pharmacy"],
+                "Tiruchirappalli": ["First Med Shop", "Care House Pharmacy"],
+                "Srirangam": ["Srirangam Medicals", "Srirangam Chemist"],
+                "Manapparai": ["Manapparai Medical Store", "Trust Pharmacy"],
+                "Salem": ["Salem Health Center", "Quick Med Store"],
+                "Attur": ["Attur Medicals", "Attur Pharmacy"],
+                "Mettur": ["Mettur Medical Store", "First Aid Shop"],
+                "Omalur": ["Omalur Health Shop", "Reliable Care Pharmacy"],
+                "Erode": ["Erode Medical Shop", "Health Point"],
+                "Gobichettipalayam": ["Gobichettipalayam Pharmacy", "Family Health Shop"],
+                "Bhavani": ["Bhavani Medi Care", "Excellent Chemists"],
+                "Tirunelveli": ["Tirunelveli Medical Store", "Tirunelveli Chemist"],
+                "Palayamkottai": ["Palayamkottai Health Store", "Palayam Kliniq"],
+                "Tenkasi": ["Tenkasi Care Center", "Tenkasi Medical Shop"],
+                "Vellore": ["Vellore Chemists", "Health and Family Pharmacy"],
+                "Gudiyatham": ["Gudiyatham Medical Center", "Local Care Pharmacy"],
+                "Ambur": ["Ambur Chemists", "Ambur Medical Store"],
+                "Thoothukudi": ["Thoothukudi Medical Supplies", "Trust Medical Shop"],
+                "Kovilpatti": ["Kovilpatti Medical Store", "Kovilpatti Health Shop"],
+                "Srivaikuntam": ["Srivaikuntam Chemist", "Health First Pharmacy"],
+                "Namakkal": ["Rajan Agro Service Centre"],
+                "Velur": ["Velur Agri Centre"],
+                "Mohanur": ["Sakthi Fertilizer Company"],
+            };
+
+            if (shop[city]) {
+                results = "Nearby Agri shops:<br>" + shop[city].join("<br>");
+            } else {
+                results = "No Agri shop found in this city.";
+            }
+
+            shopResults.innerHTML = results;
+        }
+    </script>
+</body>
+</html>
